@@ -211,9 +211,6 @@ class TeamManager:
                     # Provided settings override defaults
                     **settings_config,  # type: ignore,
                     # "model_client_configs": model_client_configs,
-                    # These must always be set to the values computed above
-                    "playwright_port": playwright_port,
-                    "novnc_port": novnc_port,
                     # Defer to self for inside_docker
                     "inside_docker": self.inside_docker,
                 }
