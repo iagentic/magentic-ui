@@ -5,9 +5,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Any
 
 # import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import httpx
 from loguru import logger
 
 from ...version import VERSION
@@ -194,8 +195,6 @@ app.mount(
 @app.get("/vnc/{path:path}")
 async def vnc_proxy(path: str, request: Request):
     """Proxy VNC requests to avoid CORS issues"""
-    import httpx
-    
     # Forward the request to the VNC container
     vnc_url = f"http://localhost:6080/{path}"
     
