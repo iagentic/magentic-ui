@@ -66,4 +66,4 @@ const NotFoundPage: React.FC<PageProps> = () => {
 
 export default NotFoundPage
 
-export const Head: HeadFC = () => <title>Page Not Found | Magentic-UI </title>
+export const Head: HeadFC = () => <title>Page Not Found | iAgentic-operator </title>

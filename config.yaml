@@ -1,0 +1,50 @@
+##########################################################################
+# Multi-provider Magentic-UI config
+#  – Three model “profiles”                                               
+#  – Agent-level overrides                                               
+#  – Safe fall-back to OpenAI when a key/host is missing                 
+##########################################################################
+
+# ---------- 1.  MODEL PROFILES  ----------------------------------------
+# Re-use these anchors (&) in agent sections below.
+
+openai_default: &openai_client               # GPT-4o via OpenAI
+  provider: autogen_ext.models.openai.OpenAIChatCompletionClient
+  config:
+    model: gpt-4o
+    api_key: ${OPENAI_API_KEY}
+    base_url: "https://api.openai.com/v1"
+    max_retries: 6
+
+groq_llama3: &groq_client                    # 70 B Llama-3 via Groq Cloud
+  provider: autogen_ext.models.openai.OpenAIChatCompletionClient
+  config:
+    model: llama3-70b-8192
+    api_key: ${GROQ_API_KEY}
+    base_url: "https://api.groq.com/openai/v1"         # Groq’s OpenAI-compatible URL :contentReference[oaicite:0]{index=0}
+    max_retries: 6
+
+ollama_local: &ollama_client                 # Any local model via Ollama
+  provider: autogen_ext.models.ollama.OllamaChatCompletionClient
+  config:
+    host: "http://localhost:11434"            # default Ollama REST host
+    model: llama3                            # or “phi3”, “mistral-7b”, …
+    timeout: 120
+    max_retries: 3                           # YAML pattern from Magentic-UI + Ollama guide :contentReference[oaicite:1]{index=1}
+
+# ---------- 2.  AGENT-LEVEL CLIENT OVERRIDES ---------------------------
+
+planner_client:          *openai_client   # keeps best-in-class reasoning
+web_surfer_client:       *groq_client     # gains Groq’s sub-50 ms latency
+coder_client:            *groq_client   # runs Python + local LLM for code
+file_surfer_client:      *groq_client
+
+# ---------- 3.  AGENT-SPECIFIC PARAMS ----------------------------------
+
+web_surfer_params:
+  to_save_screenshots: true
+  request_timeout: 30           # Groq is fast; websites are slow!
+
+coder_env:
+  # example: pass Google-Sheets creds into the Coder container
+  GOOGLE_APPLICATION_CREDENTIALS: /workspace/gsheet.json

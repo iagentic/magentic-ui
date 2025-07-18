@@ -376,7 +376,7 @@ action_guard_client: *client
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-2">
                             Allowed Websites List
-                            <Tooltip title="When enabled, Magentic-UI will only be able to visit websites you add to the list below.s">
+                            <Tooltip title="When enabled, iAgentic-operator will only be able to visit websites you add to the list below.s">
                               <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
                             </Tooltip>
                           </span>
@@ -453,7 +453,7 @@ action_guard_client: *client
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         Allow Replans
-                        <Tooltip title="When enabled, Magentic-UI will automatically replan if the current plan is not working or you change the original request">
+                        <Tooltip title="When enabled, iAgentic-operator will automatically replan if the current plan is not working or you change the original request">
                           <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
                         </Tooltip>
                       </span>
@@ -470,7 +470,7 @@ action_guard_client: *client
                     {/*<div className="flex items-center justify-between">
                        <span className="flex items-center gap-2">
                         Use Bing Search for Planning
-                        <Tooltip title="When enabled, Magentic-UI will use Bing Search when coming up with a plan. Note this adds 10 seconds to the planning time.">
+                        <Tooltip title="When enabled, iAgentic-operator will use Bing Search when coming up with a plan. Note this adds 10 seconds to the planning time.">
                           <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
                         </Tooltip>
                       </span> 
@@ -487,7 +487,7 @@ action_guard_client: *client
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         Retrieve Relevant Plans
-                        <Tooltip title="Controls how Magentic-UI retrieves and uses relevant plans from previous sessions">
+                        <Tooltip title="Controls how iAgentic-operator retrieves and uses relevant plans from previous sessions">
                           <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
                         </Tooltip>
                       </span>

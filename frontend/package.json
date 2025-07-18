@@ -1,8 +1,8 @@
 {
-  "name": "Magentic-UI",
+  "name": "iAgentic-operator",
   "version": "1.0.0",
   "private": true,
-  "description": "Magentic-UI",
+  "description": "iAgentic-operator",
   "author": "Microsoft",
   "keywords": [
     "gatsby"

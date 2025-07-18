@@ -17,7 +17,7 @@ const SecurityBanner: React.FC<SecurityBannerProps> = ({
     >
       <ShieldAlert className="h-5 w-5 mr-2 flex-shrink-0" />
       <p className="text-sm">
-        <span className="font-bold">Security Note:</span> Magentic-UI cannot see what
+        <span className="font-bold">Security Note:</span> iAgentic-operator cannot see what
         you do when you take control. Be cautious about entering passwords or
         sensitive information.
       </p>

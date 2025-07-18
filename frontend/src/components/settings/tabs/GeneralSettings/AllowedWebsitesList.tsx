@@ -41,7 +41,7 @@ const AllowedWebsitesList: React.FC<AllowedWebsitesListProps> = ({
       <Flex align="center" justify="space-between" wrap gap="small">
         <Flex align="center" justify="start" gap="small">
           Allowed Websites List
-          <Tooltip title="When enabled, Magentic-UI will only be able to visit websites you add to the list below.">
+          <Tooltip title="When enabled, iAgentic-operator will only be able to visit websites you add to the list below.">
             <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
           </Tooltip>
         </Flex>

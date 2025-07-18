@@ -93,7 +93,7 @@ const BrowserModal: React.FC<BrowserModalProps> = (props) => {
                   className="font-medium shadow-md flex justify-center items-center"
                   size="large"
                 >
-                  Give control back to Magentic-UI 
+                  Give control back to iAgentic-operator 
                 </Button>
               )}
             </div>

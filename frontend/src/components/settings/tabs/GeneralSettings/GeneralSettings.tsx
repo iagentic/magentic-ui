@@ -68,7 +68,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <Flex align="center" justify="space-between" wrap gap="large">
             <Flex align="center" justify="start" gap="small" wrap>
               Allow Replans
-              <Tooltip title="When enabled, Magentic-UI will automatically replan if the current plan is not working or you change the original request">
+              <Tooltip title="When enabled, iAgentic-operator will automatically replan if the current plan is not working or you change the original request">
                 <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
               </Tooltip>
             </Flex>
@@ -101,7 +101,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <Flex align="center" justify="space-between" wrap gap="small">
             <Flex align="center" gap="small">
               Retrieve Relevant Plans
-              <Tooltip title="Controls how Magentic-UI retrieves and uses relevant plans from previous sessions">
+              <Tooltip title="Controls how iAgentic-operator retrieves and uses relevant plans from previous sessions">
                 <InfoCircleOutlined className="text-secondary hover:text-primary cursor-help" />
               </Tooltip>
             </Flex>
