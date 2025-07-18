@@ -36,7 +36,6 @@ const BrowserIframe: React.FC<BrowserIframeProps> = ({
   // For VNC, use the proxy route to avoid CORS issues
   // The VNC will be proxied through the Magentic-UI server
   const finalServerUrl = window.location.hostname;
-  const vncPath = `vnc/${novncPort}`;
 
   const [iframeDimensions, setIframeDimensions] = useState({
     width: 0,
@@ -74,7 +73,7 @@ const BrowserIframe: React.FC<BrowserIframeProps> = ({
   }
 
   // Build VNC URL with parameters using the proxy
-  const vncUrl = `http://${finalServerUrl}:8081/${vncPath}/vnc.html?autoconnect=true&resize=${
+  const vncUrl = `http://${finalServerUrl}:8081/vnc/vnc.html?autoconnect=true&resize=${
     scaling === "remote" ? "remote" : "scale"
   }&show_dot=true&scaling=${scaling}&quality=${quality}&compression=0&view_only=${
     viewOnly ? 1 : 0

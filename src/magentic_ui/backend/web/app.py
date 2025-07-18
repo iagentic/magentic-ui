@@ -198,9 +198,12 @@ async def vnc_proxy(path: str, request: Request):
     # Forward the request to the VNC container
     vnc_url = f"http://localhost:6080/{path}"
     
+    logger.info(f"VNC proxy request: {path} -> {vnc_url}")
+    
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(vnc_url, params=request.query_params)
+            logger.info(f"VNC proxy response: {response.status_code} for {path}")
             return Response(
                 content=response.content,
                 status_code=response.status_code,
