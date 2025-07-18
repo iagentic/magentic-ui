@@ -189,6 +189,9 @@ const DetailViewer: React.FC<DetailViewerProps> = ({
 
     // Use server_url from config if set, otherwise default to localhost
     const serverHost = config.server_url || "localhost";
+    console.log("DetailViewer config:", config);
+    console.log("DetailViewer serverHost:", serverHost);
+    console.log("DetailViewer window.location.hostname:", window.location.hostname);
 
     return (
       <div className="flex-1 w-full h-full flex flex-col">
