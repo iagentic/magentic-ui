@@ -37,7 +37,7 @@ const defaultConfig: GeneralConfig = {
   do_bing_search: false,
   websurfer_loop: false,
   retrieve_relevant_plans: "never",
-  server_url: "localhost",
+  server_url: typeof window !== 'undefined' ? window.location.hostname : "localhost",
   mcp_agent_configs: [],
   run_without_docker: false,
   browser_headless: true,
