@@ -150,8 +150,18 @@ class TeamManager:
     ) -> tuple[Team, int, int]:
         """Create team instance from config"""
         if not self.run_without_docker:
+            # Use configured ports and settings from self.config
+            config_novnc_port = self.config.get("novnc_port", -1)
+            config_playwright_port = self.config.get("playwright_port", -1)
+            config_headless = self.config.get("browser_headless", True)
+            config_network_name = self.config.get("network_name", "my-network")
             _, novnc_port, playwright_port = get_browser_resource_config(
-                paths.external_run_dir, -1, -1, self.inside_docker
+                paths.external_run_dir, 
+                config_novnc_port, 
+                config_playwright_port, 
+                self.inside_docker,
+                headless=config_headless,
+                network_name=config_network_name
             )
         else:
             novnc_port = -1
