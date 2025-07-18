@@ -189,6 +189,33 @@ app.mount(
     StaticFiles(directory=initializer.static_root, html=True),
     name="files",
 )
+
+# Add VNC proxy route to avoid CORS issues
+@app.get("/vnc/{path:path}")
+async def vnc_proxy(path: str, request: Request):
+    """Proxy VNC requests to avoid CORS issues"""
+    import httpx
+    
+    # Forward the request to the VNC container
+    vnc_url = f"http://localhost:6080/{path}"
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(vnc_url, params=request.query_params)
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    **{k: v for k, v in response.headers.items() if k.lower() not in ['content-length']}
+                }
+            )
+    except Exception as e:
+        logger.error(f"VNC proxy error: {e}")
+        return Response(content="VNC not available", status_code=503)
+
 app.mount("/", StaticFiles(directory=initializer.ui_root, html=True), name="ui")
 
 # Error handlers

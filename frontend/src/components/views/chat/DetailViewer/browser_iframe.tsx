@@ -33,11 +33,10 @@ const BrowserIframe: React.FC<BrowserIframeProps> = ({
   serverUrl,
 }) => {
 
-  // Get the hostname of the current access address
-  const currentHostname = window.location.hostname;
-
-  // If serverUrl is not provided, use the current hostname
-  const finalServerUrl = serverUrl || currentHostname;
+  // For VNC, use the proxy route to avoid CORS issues
+  // The VNC will be proxied through the Magentic-UI server
+  const finalServerUrl = window.location.hostname;
+  const vncPath = `vnc/${novncPort}`;
 
   const [iframeDimensions, setIframeDimensions] = useState({
     width: 0,
@@ -74,8 +73,8 @@ const BrowserIframe: React.FC<BrowserIframeProps> = ({
     );
   }
 
-  // Build VNC URL with parameters
-  const vncUrl = `http://${finalServerUrl}:${novncPort}/vnc.html?autoconnect=true&resize=${
+  // Build VNC URL with parameters using the proxy
+  const vncUrl = `http://${finalServerUrl}:8081/${vncPath}/vnc.html?autoconnect=true&resize=${
     scaling === "remote" ? "remote" : "scale"
   }&show_dot=true&scaling=${scaling}&quality=${quality}&compression=0&view_only=${
     viewOnly ? 1 : 0
