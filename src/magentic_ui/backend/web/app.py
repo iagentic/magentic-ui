@@ -5,9 +5,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Any
 
 # import logging
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import httpx
 import asyncio
 from loguru import logger
@@ -292,7 +293,32 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
         except:
             pass
 
-app.mount("/", StaticFiles(directory=initializer.ui_root, html=True), name="ui")
+# Mount UI static files - but be more specific to avoid catching WebSocket requests
+app.mount("/ui", StaticFiles(directory=initializer.ui_root, html=True), name="ui")
+
+# Catch-all route for UI files (but not WebSocket requests)
+@app.get("/{path:path}")
+async def ui_catch_all(path: str, request: Request):
+    """Serve UI files for paths that don't match other routes"""
+    # Skip if this looks like a WebSocket request
+    if "websocket" in request.headers.get("upgrade", "").lower():
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # Try to serve the file from the UI directory
+    try:
+        file_path = os.path.join(initializer.ui_root, path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        else:
+            # If file doesn't exist, serve index.html for SPA routing
+            index_path = os.path.join(initializer.ui_root, "index.html")
+            if os.path.isfile(index_path):
+                return FileResponse(index_path)
+            else:
+                raise HTTPException(status_code=404, detail="Not found")
+    except Exception as e:
+        logger.error(f"Error serving UI file {path}: {e}")
+        raise HTTPException(status_code=404, detail="Not found")
 
 # Error handlers
 
