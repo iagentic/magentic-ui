@@ -5,10 +5,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Any
 
 # import logging
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import httpx
+import asyncio
 from loguru import logger
 
 from ...version import VERSION
@@ -204,19 +205,92 @@ async def vnc_proxy(path: str, request: Request):
         async with httpx.AsyncClient() as client:
             response = await client.get(vnc_url, params=request.query_params)
             logger.info(f"VNC proxy response: {response.status_code} for {path}")
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                headers={
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type",
-                    **{k: v for k, v in response.headers.items() if k.lower() not in ['content-length']}
-                }
-            )
+            
+            # Special handling for vnc.html to modify WebSocket URLs
+            if path == "vnc.html":
+                content = response.text
+                # Replace WebSocket URLs to use our proxy
+                content = content.replace('ws://localhost:6080/', 'ws://' + request.headers.get('host', 'localhost:8081') + '/vnc-ws/')
+                content = content.replace('wss://localhost:6080/', 'wss://' + request.headers.get('host', 'localhost:8081') + '/vnc-ws/')
+                
+                return Response(
+                    content=content,
+                    status_code=response.status_code,
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "Content-Type": "text/html",
+                        **{k: v for k, v in response.headers.items() if k.lower() not in ['content-length', 'content-type']}
+                    }
+                )
+            else:
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        **{k: v for k, v in response.headers.items() if k.lower() not in ['content-length']}
+                    }
+                )
     except Exception as e:
         logger.error(f"VNC proxy error: {e}")
         return Response(content="VNC not available", status_code=503)
+
+# Add WebSocket proxy for VNC WebSocket connections
+@app.websocket("/vnc-ws/{path:path}")
+async def vnc_websocket_proxy(websocket: WebSocket, path: str):
+    """Proxy WebSocket connections for VNC to avoid CORS issues"""
+    await websocket.accept()
+    
+    logger.info(f"VNC WebSocket proxy request: {path}")
+    
+    try:
+        # Connect to the VNC WebSocket
+        vnc_ws_url = f"ws://localhost:6080/{path}"
+        
+        # Use websockets library for proper WebSocket proxying
+        import websockets
+        
+        async with websockets.connect(vnc_ws_url) as vnc_websocket:
+            logger.info(f"Connected to VNC WebSocket: {vnc_ws_url}")
+            
+            # Create tasks for bidirectional forwarding
+            async def forward_to_vnc():
+                try:
+                    async for message in websocket.iter_text():
+                        await vnc_websocket.send(message)
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error forwarding to VNC: {e}")
+            
+            async def forward_from_vnc():
+                try:
+                    async for message in vnc_websocket:
+                        await websocket.send_text(message)
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error forwarding from VNC: {e}")
+            
+            # Run both forwarding tasks
+            await asyncio.gather(
+                forward_to_vnc(),
+                forward_from_vnc(),
+                return_exceptions=True
+            )
+        
+    except WebSocketDisconnect:
+        logger.info("VNC WebSocket proxy client disconnected")
+    except Exception as e:
+        logger.error(f"VNC WebSocket proxy error: {e}")
+        try:
+            await websocket.close(code=1011, reason="Internal error")
+        except:
+            pass
 
 app.mount("/", StaticFiles(directory=initializer.ui_root, html=True), name="ui")
 
