@@ -211,8 +211,12 @@ async def vnc_proxy(path: str, request: Request):
             if path == "vnc.html":
                 content = response.text
                 # Replace WebSocket URLs to use our proxy
-                content = content.replace('ws://localhost:6080/', 'ws://' + request.headers.get('host', 'localhost:8081') + '/vnc-ws/')
-                content = content.replace('wss://localhost:6080/', 'wss://' + request.headers.get('host', 'localhost:8081') + '/vnc-ws/')
+                host = request.headers.get('host', 'localhost:8081')
+                content = content.replace('ws://localhost:6080/', f'ws://{host}/vnc-ws/')
+                content = content.replace('wss://localhost:6080/', f'wss://{host}/vnc-ws/')
+                # Also replace any relative WebSocket paths
+                content = content.replace('href="websockify"', f'href="ws://{host}/vnc-ws/websockify"')
+                content = content.replace('href="/websockify"', f'href="ws://{host}/vnc-ws/websockify"')
                 
                 return Response(
                     content=content,
@@ -249,14 +253,93 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
     logger.info(f"VNC WebSocket proxy request: {path}")
     
     try:
-        # Connect to the VNC WebSocket
-        vnc_ws_url = f"ws://localhost:6080/{path}"
+        # Connect to the VNC WebSocket - try different possible paths
+        possible_paths = [
+            f"ws://localhost:6080/{path}",
+            f"ws://localhost:6080/websockify",
+            f"ws://localhost:6080/websockify/",
+            f"ws://localhost:6080/",
+        ]
         
         # Use websockets library for proper WebSocket proxying
         import websockets
         
+        vnc_websocket = None
+        connected_url = None
+        
+        # Try each possible WebSocket URL
+        for vnc_ws_url in possible_paths:
+            try:
+                logger.info(f"Attempting to connect to: {vnc_ws_url}")
+                vnc_websocket = await websockets.connect(vnc_ws_url)
+                connected_url = vnc_ws_url
+                logger.info(f"Successfully connected to VNC WebSocket: {vnc_ws_url}")
+                break
+            except Exception as e:
+                logger.warning(f"Failed to connect to {vnc_ws_url}: {e}")
+                continue
+        
+        if vnc_websocket is None:
+            logger.error("Failed to connect to any VNC WebSocket URL")
+            await websocket.close(code=1011, reason="VNC WebSocket not available")
+            return
+        
+        try:
+            # Create tasks for bidirectional forwarding
+            async def forward_to_vnc():
+                try:
+                    async for message in websocket.iter_text():
+                        await vnc_websocket.send(message)
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error forwarding to VNC: {e}")
+            
+            async def forward_from_vnc():
+                try:
+                    async for message in vnc_websocket:
+                        await websocket.send_text(message)
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error forwarding from VNC: {e}")
+            
+            # Run both forwarding tasks
+            await asyncio.gather(
+                forward_to_vnc(),
+                forward_from_vnc(),
+                return_exceptions=True
+            )
+        finally:
+            await vnc_websocket.close()
+        
+    except WebSocketDisconnect:
+        logger.info("VNC WebSocket proxy client disconnected")
+    except Exception as e:
+        logger.error(f"VNC WebSocket proxy error: {e}")
+        try:
+            await websocket.close(code=1011, reason="Internal error")
+        except:
+            pass
+
+# Add direct WebSocket proxy for the path the client is actually using
+@app.websocket("/vnc/websockify")
+async def vnc_websocket_direct(websocket: WebSocket):
+    """Direct WebSocket proxy for VNC websockify path"""
+    await websocket.accept()
+    
+    logger.info("VNC WebSocket direct proxy request: /vnc/websockify")
+    
+    try:
+        # Connect directly to the VNC WebSocket
+        vnc_ws_url = "ws://localhost:6080/websockify"
+        
+        # Use websockets library for proper WebSocket proxying
+        import websockets
+        
+        logger.info(f"Attempting to connect to: {vnc_ws_url}")
         async with websockets.connect(vnc_ws_url) as vnc_websocket:
-            logger.info(f"Connected to VNC WebSocket: {vnc_ws_url}")
+            logger.info(f"Successfully connected to VNC WebSocket: {vnc_ws_url}")
             
             # Create tasks for bidirectional forwarding
             async def forward_to_vnc():
@@ -285,9 +368,9 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
             )
         
     except WebSocketDisconnect:
-        logger.info("VNC WebSocket proxy client disconnected")
+        logger.info("VNC WebSocket direct proxy client disconnected")
     except Exception as e:
-        logger.error(f"VNC WebSocket proxy error: {e}")
+        logger.error(f"VNC WebSocket direct proxy error: {e}")
         try:
             await websocket.close(code=1011, reason="Internal error")
         except:
