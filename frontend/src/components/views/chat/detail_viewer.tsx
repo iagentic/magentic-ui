@@ -192,6 +192,8 @@ const DetailViewer: React.FC<DetailViewerProps> = ({
     console.log("DetailViewer config:", config);
     console.log("DetailViewer serverHost:", serverHost);
     console.log("DetailViewer window.location.hostname:", window.location.hostname);
+    console.log("DetailViewer novncPort:", novncPort);
+    console.log("DetailViewer viewMode:", viewMode);
 
     return (
       <div className="flex-1 w-full h-full flex flex-col">

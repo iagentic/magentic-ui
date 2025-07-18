@@ -80,6 +80,10 @@ const BrowserIframe: React.FC<BrowserIframeProps> = ({
   }&show_dot=true&scaling=${scaling}&quality=${quality}&compression=0&view_only=${
     viewOnly ? 1 : 0
   }`;
+  
+  console.log("BrowserIframe finalServerUrl:", finalServerUrl);
+  console.log("BrowserIframe novncPort:", novncPort);
+  console.log("BrowserIframe vncUrl:", vncUrl);
 
   return (
     <div
