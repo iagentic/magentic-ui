@@ -197,8 +197,10 @@ app.mount(
 @app.get("/vnc/{path:path}")
 async def vnc_proxy(path: str, request: Request):
     """Proxy VNC requests to avoid CORS issues"""
+    # Get VNC port from environment or config, default to 6080
+    vnc_port = os.environ.get("NOVNC_PORT", "6080")
     # Forward the request to the VNC container
-    vnc_url = f"http://localhost:6080/{path}"
+    vnc_url = f"http://localhost:{vnc_port}/{path}"
     
     logger.info(f"VNC proxy request: {path} -> {vnc_url}")
     
@@ -212,8 +214,8 @@ async def vnc_proxy(path: str, request: Request):
                 content = response.text
                 # Replace WebSocket URLs to use our proxy
                 host = request.headers.get('host', 'localhost:8081')
-                content = content.replace('ws://localhost:6080/', f'ws://{host}/vnc-ws/')
-                content = content.replace('wss://localhost:6080/', f'wss://{host}/vnc-ws/')
+                content = content.replace(f'ws://localhost:{vnc_port}/', f'ws://{host}/vnc-ws/')
+                content = content.replace(f'wss://localhost:{vnc_port}/', f'wss://{host}/vnc-ws/')
                 # Also replace any relative WebSocket paths
                 content = content.replace('href="websockify"', f'href="ws://{host}/vnc-ws/websockify"')
                 content = content.replace('href="/websockify"', f'href="ws://{host}/vnc-ws/websockify"')
@@ -250,11 +252,13 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
     await websocket.accept()
     logger.info(f"VNC WebSocket proxy request: {path}")
     try:
+        # Get VNC port from environment or config, default to 6080
+        vnc_port = os.environ.get("NOVNC_PORT", "6080")
         possible_paths = [
-            f"ws://localhost:6080/{path}",
-            f"ws://localhost:6080/websockify",
-            f"ws://localhost:6080/websockify/",
-            f"ws://localhost:6080/",
+            f"ws://localhost:{vnc_port}/{path}",
+            f"ws://localhost:{vnc_port}/websockify",
+            f"ws://localhost:{vnc_port}/websockify/",
+            f"ws://localhost:{vnc_port}/",
         ]
         import websockets
         vnc_websocket = None
@@ -307,7 +311,9 @@ async def vnc_websocket_direct(websocket: WebSocket):
     await websocket.accept()
     logger.info("VNC WebSocket direct proxy request: /vnc/websockify")
     try:
-        vnc_ws_url = "ws://localhost:6080/websockify"
+        # Get VNC port from environment or config, default to 6080
+        vnc_port = os.environ.get("NOVNC_PORT", "6080")
+        vnc_ws_url = f"ws://localhost:{vnc_port}/websockify"
         import websockets
         logger.info(f"Attempting to connect to: {vnc_ws_url}")
         async with websockets.connect(vnc_ws_url) as vnc_websocket:

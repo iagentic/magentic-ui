@@ -524,7 +524,7 @@ class WebSurfer(BaseChatAgent, Component[WebSurferConfig]):
             # Send browser address message after browser is initialized
             yield TextMessage(
                 source="system",
-                content=f"Browser noVNC address can be found at http://localhost:{self._browser.novnc_port}/vnc.html",
+                content=f"Browser noVNC address can be found at http://{self._browser._hostname}:{self._browser.novnc_port}/vnc.html",
                 metadata={
                     "internal": "no",
                     "type": "browser_address",
