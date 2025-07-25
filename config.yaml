@@ -1,6 +1,6 @@
 ##########################################################################
 # Multi-provider Magentic-UI config
-#  – Three model “profiles”                                               
+#  – Three model "profiles"                                               
 #  – Agent-level overrides                                               
 #  – Safe fall-back to OpenAI when a key/host is missing                 
 ##########################################################################
@@ -21,25 +21,35 @@ groq_llama3: &groq_client                    # 70 B Llama-3 via Groq Cloud
   config:
     model: llama3-70b-8192
     api_key: ${GROQ_API_KEY}
-    base_url: "https://api.groq.com/openai/v1"         # Groq’s OpenAI-compatible URL :contentReference[oaicite:0]{index=0}
+    base_url: "https://api.groq.com/openai/v1"         # Groq's OpenAI-compatible URL :contentReference[oaicite:0]{index=0}
     max_retries: 6
 
 ollama_local: &ollama_client                 # Any local model via Ollama
   provider: autogen_ext.models.ollama.OllamaChatCompletionClient
   config:
     host: "http://localhost:11434"            # default Ollama REST host
-    model: llama3                            # or “phi3”, “mistral-7b”, …
+    model: llama3                            # or "phi3", "mistral-7b", …
     timeout: 120
     max_retries: 3                           # YAML pattern from Magentic-UI + Ollama guide :contentReference[oaicite:1]{index=1}
 
 # ---------- 2.  AGENT-LEVEL CLIENT OVERRIDES ---------------------------
 
-planner_client:          *openai_client   # keeps best-in-class reasoning
-web_surfer_client:       *groq_client     # gains Groq’s sub-50 ms latency
-coder_client:            *groq_client   # runs Python + local LLM for code
-file_surfer_client:      *groq_client
+orchestrator_client:          *openai_client   # keeps best-in-class reasoning
+web_surfer_client:           *groq_client     # gains Groq's sub-50 ms latency
+coder_client:                *groq_client   # runs Python + local LLM for code
+file_surfer_client:          *groq_client
+action_guard_client:         *openai_client
 
-# ---------- 3.  AGENT-SPECIFIC PARAMS ----------------------------------
+# ---------- 3.  VNC AND BROWSER CONFIGURATION --------------------------
+
+# Fixed port configuration for VNC and Playwright
+novnc_port: 6080
+playwright_port: 37367
+browser_headless: false
+inside_docker: false
+network_name: "my-network"
+
+# ---------- 4.  AGENT-SPECIFIC PARAMS ----------------------------------
 
 web_surfer_params:
   to_save_screenshots: true

@@ -424,7 +424,7 @@ class PlaywrightController:
                 # Create a timeout for the download listener - use a longer timeout
                 download_future = asyncio.create_task(
                     page.wait_for_event(  # type: ignore
-                        "download", timeout=self._timeout_load * 5000
+                        "download", timeout=self._timeout_load * 10000  # Increased from 5000 to 10000
                     )
                 )
             except Exception as e:
@@ -659,7 +659,7 @@ class PlaywrightController:
             try:
                 download_future = asyncio.create_task(
                     page.wait_for_event(  # type: ignore
-                        "download", timeout=self._timeout_load * 2000
+                        "download", timeout=self._timeout_load * 10000
                     )
                 )
             except Exception as e:

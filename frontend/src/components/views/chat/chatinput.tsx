@@ -25,8 +25,8 @@ import RelevantPlans from "./relevant_plans";
 import { IPlan } from "../../types/plan";
 import PlanView from "./plan";
 
-// Maximum file size in bytes (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Maximum file size in bytes (100MB)
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 // Allowed file types
 const ALLOWED_FILE_TYPES = [
   "text/plain",
@@ -34,6 +34,11 @@ const ALLOWED_FILE_TYPES = [
   "image/png",
   "image/gif",
   "image/svg+xml",
+  // Excel file types
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+  "application/vnd.ms-excel", // .xls
+  // CSV file type
+  "text/csv",
 ];
 
 // Threshold for large text files (in characters)
@@ -196,7 +201,7 @@ const ChatInput = React.forwardRef<{ focus: () => void }, ChatInputProps>(
               // Show successful paste notification
               message.success(`Image pasted successfully`);
             } else if (file && file.size > MAX_FILE_SIZE) {
-              message.error(`Pasted image is too large. Maximum size is 5MB.`);
+              message.error(`Pasted image is too large. Maximum size is 100MB.`);
             }
           }
 
@@ -434,7 +439,7 @@ const ChatInput = React.forwardRef<{ focus: () => void }, ChatInputProps>(
     const handleFileValidationAndAdd = (file: File): boolean => {
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        message.error(`${file.name} is too large. Maximum size is 5MB.`);
+        message.error(`${file.name} is too large. Maximum size is 100MB.`);
         return false;
       }
 
@@ -444,8 +449,8 @@ const ChatInput = React.forwardRef<{ focus: () => void }, ChatInputProps>(
           message: <span className="text-sm">Unsupported File Type</span>,
           description: (
             <span className="text-sm text-secondary">
-              Please upload only text (.txt) or images (.jpg, .png, .gif, .svg)
-              files.
+              Please upload only text (.txt), images (.jpg, .png, .gif, .svg), 
+              Excel (.xlsx, .xls), or CSV files.
             </span>
           ),
           duration: 8.5,

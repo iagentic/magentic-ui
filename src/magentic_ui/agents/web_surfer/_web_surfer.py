@@ -221,7 +221,7 @@ class WebSurfer(BaseChatAgent, Component[WebSurferConfig]):
     It can do multiple actions in a single step, but it will stop after it has performed the maximum number of actions or once it decides to stop.
     As mentioned, it can perform multiple actions per command given to it, for instance if asked to fill a form, it can input the first name, then the last name, then the email, and then submit, and then stop.
     """
-    DEFAULT_START_PAGE = "about:blank"
+    DEFAULT_START_PAGE = "data:text/html,<html><body style='font-family: Arial, sans-serif; text-align: center; padding: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;'><h1>🚀 WebSurfer Ready</h1><p>Browser is ready to navigate. Start by asking me to visit a website!</p><div style='margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;'><h3>Try these commands:</h3><ul style='text-align: left; display: inline-block;'><li>Visit a website (e.g., 'go to google.com')</li><li>Search the web (e.g., 'search for weather')</li><li>Navigate and interact with pages</li></ul></div></body></html>"
 
     # Size of the image we send to the MLM
     # Current values represent a 0.85 scaling to fit within the GPT-4v short-edge constraints (768px)

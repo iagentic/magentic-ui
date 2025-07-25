@@ -18,12 +18,14 @@ const port = process.env.PLAYWRIGHT_PORT || 37367;
       "--window-position=0,0",
       "--disable-infobars",
       "--no-default-browser-check",
-      "--kiosk",
+      // Removed --kiosk flag as it can cause display issues
       "--disable-session-crashed-bubble",
       "--noerrdialogs",
       "--force-device-scale-factor=1.0",
       "--disable-features=DefaultViewportMetaTag",
       "--force-device-width=1440",
+      "--disable-web-security",
+      "--disable-features=VizDisplayCompositor",
     ],
   });
 

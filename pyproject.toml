@@ -48,6 +48,10 @@ dependencies = [
     "pyyaml",
     "html2text",
     "psutil",
+    # Excel processing dependencies
+    "pandas",
+    "openpyxl",
+    "xlrd",
 ]
 
 [project.urls]

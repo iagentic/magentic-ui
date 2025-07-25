@@ -9,6 +9,14 @@ import shutil
 from typing import Optional
 import zlib
 
+# Try to import pandas for Excel processing
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    logger.warning("pandas not available - Excel files will be processed as text")
+
 
 def construct_task(
     query: str, files: List[Dict[str, Any]] | None = None
@@ -32,6 +40,7 @@ def construct_task(
     attached_files: List[Dict[str, str]] = []
     # Process each file based on its type
     for file in files:
+        logger.info(f"Processing file: {file.get('name')} with type: {file.get('type')}")
         try:
             if file.get("type", "").startswith("image/"):
                 # Handle image file using from_base64 method
@@ -48,16 +57,65 @@ def construct_task(
             else:
                 # Handle all other files as text
                 try:
-                    text_content = base64.b64decode(file["content"]).decode("utf-8")
-                    text_parts.append(
-                        f"Attached file: {file.get('name', 'unknown.file')}\n{text_content}"
-                    )
-                    attached_files.append(
-                        {
-                            "name": file.get("name", "unknown.file"),
-                            "type": file.get("type", "text"),
-                        }
-                    )
+                    # Special handling for Excel files
+                    if file.get("type") in [
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "application/vnd.ms-excel"
+                    ] and PANDAS_AVAILABLE:
+                        logger.info(f"Processing Excel file: {file.get('name')} with type: {file.get('type')}")
+                        try:
+                            # Decode base64 content to bytes
+                            file_bytes = base64.b64decode(file["content"])
+                            logger.info(f"Excel file decoded, size: {len(file_bytes)} bytes")
+                            
+                            # Read Excel file with pandas
+                            if file.get("type") == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                                # .xlsx file
+                                df = pd.read_excel(file_bytes, engine='openpyxl')
+                            else:
+                                # .xls file
+                                df = pd.read_excel(file_bytes, engine='xlrd')
+                            
+                            logger.info(f"Excel file read successfully, shape: {df.shape}")
+                            
+                            # Convert to CSV string
+                            csv_content = df.to_csv(index=False)
+                            text_content = f"Excel file '{file.get('name', 'unknown.xlsx')}' converted to CSV:\n\n{csv_content}"
+                            
+                            # Add to text parts
+                            text_parts.append(text_content)
+                            logger.info(f"Excel content added to text_parts, length: {len(text_content)}")
+                            
+                            attached_files.append(
+                                {
+                                    "name": file.get("name", "unknown.xlsx"),
+                                    "type": "excel",
+                                }
+                            )
+                        except Exception as excel_error:
+                            logger.error(f"Error processing Excel file {file.get('name')}: {str(excel_error)}")
+                            text_content = f"Attached Excel file: {file.get('name', 'unknown.xlsx')} (failed to process - {str(excel_error)})"
+                            text_parts.append(text_content)
+                            attached_files.append(
+                                {
+                                    "name": file.get("name", "unknown.xlsx"),
+                                    "type": "excel",
+                                }
+                            )
+                    else:
+                        logger.info(f"Processing non-Excel file: {file.get('name')} with type: {file.get('type')}")
+                        # Regular text file processing
+                        text_content = base64.b64decode(file["content"]).decode("utf-8")
+                        text_parts.append(
+                            f"Attached file: {file.get('name', 'unknown.file')}\n{text_content}"
+                        )
+                        attached_files.append(
+                            {
+                                "name": file.get("name", "unknown.file"),
+                                "type": file.get("type", "text"),
+                            }
+                        )
+                    
                 except Exception as e:
                     logger.error(f"Error processing file content: {str(e)}")
                     text_parts.append(

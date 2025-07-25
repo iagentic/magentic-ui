@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.websockets import WebSocketState
 import httpx
 import asyncio
 from loguru import logger
@@ -82,8 +83,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.error(f"Error during shutdown: {str(e)}")
 
 
-# Create FastAPI application
-app = FastAPI(lifespan=lifespan, debug=True)
+# Create FastAPI application with increased file size limits
+app = FastAPI(
+    lifespan=lifespan, 
+    debug=True,
+    # Increase file upload size limits
+    max_request_size=100 * 1024 * 1024,  # 100MB
+)
 
 # CORS middleware configuration
 app.add_middleware(
@@ -199,6 +205,19 @@ async def vnc_proxy(path: str, request: Request):
     """Proxy VNC requests to avoid CORS issues"""
     # Get VNC port from environment or config, default to 6080
     vnc_port = os.environ.get("NOVNC_PORT", "6080")
+    
+    # Try to get the actual VNC port from the websocket manager configuration
+    try:
+        from .deps import get_websocket_manager
+        websocket_manager = await get_websocket_manager()
+        if websocket_manager and hasattr(websocket_manager, 'config'):
+            config_vnc_port = websocket_manager.config.get("novnc_port")
+            if config_vnc_port and config_vnc_port != -1:
+                vnc_port = str(config_vnc_port)
+                logger.info(f"Using VNC port from config: {vnc_port}")
+    except Exception as e:
+        logger.warning(f"Could not get VNC port from config: {e}")
+    
     # Forward the request to the VNC container
     vnc_url = f"http://localhost:{vnc_port}/{path}"
     
@@ -254,6 +273,19 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
     try:
         # Get VNC port from environment or config, default to 6080
         vnc_port = os.environ.get("NOVNC_PORT", "6080")
+        
+        # Try to get the actual VNC port from the websocket manager configuration
+        try:
+            from .deps import get_websocket_manager
+            websocket_manager = await get_websocket_manager()
+            if websocket_manager and hasattr(websocket_manager, 'config'):
+                config_vnc_port = websocket_manager.config.get("novnc_port")
+                if config_vnc_port and config_vnc_port != -1:
+                    vnc_port = str(config_vnc_port)
+                    logger.info(f"Using VNC port from config: {vnc_port}")
+        except Exception as e:
+            logger.warning(f"Could not get VNC port from config: {e}")
+        
         possible_paths = [
             f"ws://localhost:{vnc_port}/{path}",
             f"ws://localhost:{vnc_port}/websockify",
@@ -278,6 +310,11 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
         async def forward_to_vnc():
             try:
                 while True:
+                    # Check if the client WebSocket is still connected
+                    if websocket.client_state == WebSocketState.DISCONNECTED:
+                        logger.info("Client WebSocket disconnected, stopping forward_to_vnc")
+                        break
+                    
                     msg = await websocket.receive()
                     if "bytes" in msg and msg["bytes"] is not None:
                         await vnc_websocket.send(msg["bytes"])
@@ -288,6 +325,11 @@ async def vnc_websocket_proxy(websocket: WebSocket, path: str):
         async def forward_from_vnc():
             try:
                 async for message in vnc_websocket:
+                    # Check if the client WebSocket is still connected
+                    if websocket.client_state == WebSocketState.DISCONNECTED:
+                        logger.info("Client WebSocket disconnected, stopping forward_from_vnc")
+                        break
+                        
                     if isinstance(message, bytes):
                         await websocket.send_bytes(message)
                     else:
@@ -313,6 +355,19 @@ async def vnc_websocket_direct(websocket: WebSocket):
     try:
         # Get VNC port from environment or config, default to 6080
         vnc_port = os.environ.get("NOVNC_PORT", "6080")
+        
+        # Try to get the actual VNC port from the websocket manager configuration
+        try:
+            from .deps import get_websocket_manager
+            websocket_manager = await get_websocket_manager()
+            if websocket_manager and hasattr(websocket_manager, 'config'):
+                config_vnc_port = websocket_manager.config.get("novnc_port")
+                if config_vnc_port and config_vnc_port != -1:
+                    vnc_port = str(config_vnc_port)
+                    logger.info(f"Using VNC port from config: {vnc_port}")
+        except Exception as e:
+            logger.warning(f"Could not get VNC port from config: {e}")
+        
         vnc_ws_url = f"ws://localhost:{vnc_port}/websockify"
         import websockets
         logger.info(f"Attempting to connect to: {vnc_ws_url}")
@@ -321,6 +376,11 @@ async def vnc_websocket_direct(websocket: WebSocket):
             async def forward_to_vnc():
                 try:
                     while True:
+                        # Check if the client WebSocket is still connected
+                        if websocket.client_state == WebSocketState.DISCONNECTED:
+                            logger.info("Client WebSocket disconnected, stopping forward_to_vnc")
+                            break
+                        
                         msg = await websocket.receive()
                         if "bytes" in msg and msg["bytes"] is not None:
                             await vnc_websocket.send(msg["bytes"])
@@ -331,6 +391,11 @@ async def vnc_websocket_direct(websocket: WebSocket):
             async def forward_from_vnc():
                 try:
                     async for message in vnc_websocket:
+                        # Check if the client WebSocket is still connected
+                        if websocket.client_state == WebSocketState.DISCONNECTED:
+                            logger.info("Client WebSocket disconnected, stopping forward_from_vnc")
+                            break
+                            
                         if isinstance(message, bytes):
                             await websocket.send_bytes(message)
                         else:
