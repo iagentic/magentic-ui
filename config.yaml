@@ -48,6 +48,12 @@ playwright_port: 37367
 browser_headless: false
 inside_docker: false
 network_name: "my-network"
+browser_local: false
+
+# Docker resource limits for c3-standard-4 VM (4 vCPUs, 16 GB Memory)
+memory_limit: "4g"        # 4GB RAM - leaves 12GB for system and other processes
+cpu_limit: 2.0            # 2 CPU cores - leaves 2 cores for system
+memswap_limit: "6g"       # 6GB total (RAM + swap) for safety
 
 # ---------- 4.  AGENT-SPECIFIC PARAMS ----------------------------------
 

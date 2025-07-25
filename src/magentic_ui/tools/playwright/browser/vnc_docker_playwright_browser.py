@@ -31,6 +31,10 @@ class VncDockerPlaywrightBrowserConfig(BaseModel):
     playwright_websocket_path: str | None = None
     inside_docker: bool = True
     network_name: str = "my-network"
+    # Resource limits
+    memory_limit: str | None = None  # e.g., "2g", "512m"
+    cpu_limit: float | None = None   # e.g., 1.0, 2.5
+    memswap_limit: str | None = None  # e.g., "4g", "1g"
 
 
 class VncDockerPlaywrightBrowser(
@@ -48,6 +52,9 @@ class VncDockerPlaywrightBrowser(
         novnc_port (int, optional): Port for noVNC web interface. Default: 6080.
         inside_docker (bool, optional): Whether the client is running inside Docker. Default: True.
         network_name (str, optional): Docker network name for container communication. Default: `my-network`.
+        memory_limit (str | None, optional): Memory limit for the container (e.g., "2g", "512m"). Default: None.
+        cpu_limit (float | None, optional): CPU limit for the container (e.g., 1.0, 2.5). Default: None.
+        memswap_limit (str | None, optional): Memory + swap limit for the container (e.g., "4g", "1g"). Default: None.
 
     Properties:
         browser_address (str): WebSocket URL for Playwright connection.
@@ -58,7 +65,9 @@ class VncDockerPlaywrightBrowser(
         browser = VncDockerPlaywrightBrowser(
             bind_dir=Path("./workspace"),
             playwright_port=37367,
-            novnc_port=6080
+            novnc_port=6080,
+            memory_limit="2g",
+            cpu_limit=1.5
         )
         await browser.start()
         # Access browser programmatically via Playwright
@@ -83,6 +92,9 @@ class VncDockerPlaywrightBrowser(
         novnc_port: int = 6080,
         inside_docker: bool = True,
         network_name: str = "my-network",
+        memory_limit: str | None = None,
+        cpu_limit: float | None = None,
+        memswap_limit: str | None = None,
     ):
         super().__init__()
         self._bind_dir = bind_dir
@@ -94,6 +106,9 @@ class VncDockerPlaywrightBrowser(
         )
         self._inside_docker = inside_docker
         self._network_name = network_name
+        self._memory_limit = memory_limit
+        self._cpu_limit = cpu_limit
+        self._memswap_limit = memswap_limit
         self._hostname = (
             f"magentic-ui-vnc-browser_{self._playwright_websocket_path}_{self._novnc_port}"
             if inside_docker
@@ -180,6 +195,10 @@ class VncDockerPlaywrightBrowser(
                 "PLAYWRIGHT_PORT": str(self._playwright_port),
                 "NO_VNC_PORT": str(self._novnc_port),
             },
+            # Add resource limits if specified
+            mem_limit=self._memory_limit,
+            cpu_quota=int(self._cpu_limit * 100000) if self._cpu_limit else None,
+            memswap_limit=self._memswap_limit,
         )
 
     def _to_config(self) -> VncDockerPlaywrightBrowserConfig:
@@ -191,6 +210,9 @@ class VncDockerPlaywrightBrowser(
             playwright_websocket_path=self._playwright_websocket_path,
             inside_docker=self._inside_docker,
             network_name=self._network_name,
+            memory_limit=self._memory_limit,
+            cpu_limit=self._cpu_limit,
+            memswap_limit=self._memswap_limit,
         )
 
     @classmethod
@@ -205,4 +227,7 @@ class VncDockerPlaywrightBrowser(
             playwright_websocket_path=config.playwright_websocket_path,
             inside_docker=config.inside_docker,
             network_name=config.network_name,
+            memory_limit=config.memory_limit,
+            cpu_limit=config.cpu_limit,
+            memswap_limit=config.memswap_limit,
         )
